@@ -1,0 +1,856 @@
+{
+  "purpose": "Preservation only; no upstream upgrade or production rollout",
+  "snapshot_date": "2026-10-15",
+  "snapshots": [
+    {
+      "host": "f1.dev.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/f1.dev",
+      "upstream_base": "185054c73be9b171a7dfdc9180e4bc55d2692067",
+      "commit": "4195c50c2869bbbe23084fdd06bc550162f6469f",
+      "tree": "98b626026cdd85988d30ba86d7d54e78549c42b4",
+      "captured_at_utc": "2026-10-14T21:02:31.584059+00:00",
+      "paths": 14,
+      "source_files": [
+        {
+          "path": "agent/bench.py",
+          "mode": "100644",
+          "sha256": "47f476a4f9fbc51528658b74a76c97403fb0b3b5231be2508c4a7bd5f8dc6416",
+          "deleted": false
+        },
+        {
+          "path": "agent/bench.py.bak-codex-apparmor-20260726",
+          "mode": "100644",
+          "sha256": "111736425caae5d22ef9ede9f2ece52ef6819915fe003f4c1b2a55eb40982af3",
+          "deleted": false
+        },
+        {
+          "path": "agent/bench.py.bak-codex-codeserver-selfheal-20260805",
+          "mode": "100644",
+          "sha256": "b1b798da1009bfb684d431d85a96467360c357dd71c7c56f72eaff0e71baa536",
+          "deleted": false
+        },
+        {
+          "path": "agent/build_configs/config/supervisor.conf",
+          "mode": "100644",
+          "sha256": "125e94f990e601d8c90d3fb5627dc22b30e40b3e537482259275149683b005a8",
+          "deleted": false
+        },
+        {
+          "path": "agent/build_configs/config/supervisor.conf.bak-codex-codeserver-autostart-20260805",
+          "mode": "100644",
+          "sha256": "5c481124c0b21a6d6951f2290a3812c85e83515ebfa0a98ce781f6126c1b01b6",
+          "deleted": false
+        },
+        {
+          "path": "agent/builder.py",
+          "mode": "100644",
+          "sha256": "397e21af8d1ca89cb2799f7eb3ad212be33b3900ecf241d88a8a7637dd845f50",
+          "deleted": false
+        },
+        {
+          "path": "agent/builder.py.bak-codex-codeserver-20260727-2",
+          "mode": "100644",
+          "sha256": "46c2cc8375df0e64ddd0bce93183acd0ee6fba28ea22658c3b1d4e800e04c31e",
+          "deleted": false
+        },
+        {
+          "path": "agent/builder.py.bak-codex-codeserver-20260727-structural",
+          "mode": "100644",
+          "sha256": "46c2cc8375df0e64ddd0bce93183acd0ee6fba28ea22658c3b1d4e800e04c31e",
+          "deleted": false
+        },
+        {
+          "path": "agent/builder.py.bak-codex-codeserver-shell-expansion-20260727",
+          "mode": "100644",
+          "sha256": "1ba9a3a633c2407309c59aa0e7a7070804500e3999f3ec09333ca898b7033847",
+          "deleted": false
+        },
+        {
+          "path": "agent/server.py",
+          "mode": "100644",
+          "sha256": "1a034d09e571fcac05dc41781303a0d8c7df74052556beab148a77351540f426",
+          "deleted": false
+        },
+        {
+          "path": "agent/server.py.bak-codex-apparmor-20260726",
+          "mode": "100644",
+          "sha256": "620d832838afba2fec95f52eef862242e179898cb9eb6948fa61a87612fa25d9",
+          "deleted": false
+        },
+        {
+          "path": "agent/site.py",
+          "mode": "100644",
+          "sha256": "3647bf382d783cad4c8a8a19fa8ad1d27356bf141619b383a61f54305a1e60f7",
+          "deleted": false
+        },
+        {
+          "path": "agent/templates/bench/supervisor.conf",
+          "mode": "100644",
+          "sha256": "26c2c703b2e399989d83acb1f3755413ed481f02b9c1d54e97a90ac194404876",
+          "deleted": false
+        },
+        {
+          "path": "agent/templates/bench/supervisor.conf.bak-codex-codeserver-autostart-20260805",
+          "mode": "100644",
+          "sha256": "74344c0355478d71ae5f8787fc0ffffd7bcb815ec262468d419fdf8765cfa088",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "f1.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/f1",
+      "upstream_base": "38bdef47c385bbd344862f89e813b0a04beb485c",
+      "commit": "0fdfecf18d68800c80d99b293e0a19467ce4e6c5",
+      "tree": "d164a477998ec77f8c2a5299abd59cbe61be2014",
+      "captured_at_utc": "2026-10-14T21:02:32.976149+00:00",
+      "paths": 14,
+      "source_files": [
+        {
+          "path": "agent/bench.py",
+          "mode": "100644",
+          "sha256": "d0b9250566e0322fa4359066193c9e2afff18ead1236351affc0c952a13d4c8c",
+          "deleted": false
+        },
+        {
+          "path": "agent/bench.py.bak-codex-apparmor-20260726",
+          "mode": "100644",
+          "sha256": "1116f95e99c715a7911dd76c2a7e3c8a96fa0f6c7f578fd9cca0192709cf3d20",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-20260617-133818",
+          "mode": "100644",
+          "sha256": "76c7bd8ded6b018f8b02de9afdd08835bb6495564f5fde1413050d9a2bc10260",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py",
+          "mode": "100644",
+          "sha256": "7798686a7e114ffc8c82bd805513ed6a6e765b0b6de9663d840b675e11198c53",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py.bak-redis-host-20260617-133452",
+          "mode": "100644",
+          "sha256": "3d04cdd3d49f7ab700ab7c6c4aa59c6ff161ddcfe1b5d659a546396c9ac6983b",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-20260617-133818",
+          "mode": "100644",
+          "sha256": "b84e1f868180745151922149bcc681317505c5d646b7547cf32a068c42585064",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        },
+        {
+          "path": "agent/server.py",
+          "mode": "100644",
+          "sha256": "a9c278b50aa121c5d5f2f5a1d46c7aacdde1d2035565fc0fca8d11936e330c7f",
+          "deleted": false
+        },
+        {
+          "path": "agent/server.py.bak-codex-apparmor-20260726",
+          "mode": "100644",
+          "sha256": "9bc8b1be3c3b14d491d02359064c4402f01e036ef54e490abdad85487186e7f6",
+          "deleted": false
+        },
+        {
+          "path": "agent/site.py",
+          "mode": "100644",
+          "sha256": "13aee42d037db47109332087832eb1f3d317e3d313070047fc2a678450b64d03",
+          "deleted": false
+        },
+        {
+          "path": "agent/site.py.bak-20260517-190355",
+          "mode": "100644",
+          "sha256": "d74175b476defad00bd196425016ba72154aeec23adc2792acfc5b6af43791ba",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "f2.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/f2",
+      "upstream_base": "bfc93524151d9f62e37207700998813c8312c7bb",
+      "commit": "a951ebc688ad6a5e46f33699a4e907ba50861e81",
+      "tree": "cd396a23b7d1c8765de36fde011a235fb818da07",
+      "captured_at_utc": "2026-10-14T21:02:33.957172+00:00",
+      "paths": 14,
+      "source_files": [
+        {
+          "path": "agent/builder.py",
+          "mode": "100644",
+          "sha256": "a4f5d3ceb409268f8903d69c3079a11985b8c3e6378d6f54f89deff74495e1c0",
+          "deleted": false
+        },
+        {
+          "path": "agent/builder.py.bak-upload-20260617-122647",
+          "mode": "100644",
+          "sha256": "b54987e3fceb4597ea4b7c8f8860d9276fabfa14a7398b98f214c54818529d01",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-20260617-133815",
+          "mode": "100644",
+          "sha256": "76c7bd8ded6b018f8b02de9afdd08835bb6495564f5fde1413050d9a2bc10260",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py",
+          "mode": "100644",
+          "sha256": "7798686a7e114ffc8c82bd805513ed6a6e765b0b6de9663d840b675e11198c53",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py.bak-redis-host-20260617-130406",
+          "mode": "100644",
+          "sha256": "3d04cdd3d49f7ab700ab7c6c4aa59c6ff161ddcfe1b5d659a546396c9ac6983b",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-20260617-133815",
+          "mode": "100644",
+          "sha256": "b84e1f868180745151922149bcc681317505c5d646b7547cf32a068c42585064",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        },
+        {
+          "path": "agent/site.py",
+          "mode": "100644",
+          "sha256": "e3ae1b459504ea2d1b1446d9001ecdf7e2d7f87796559666cfc3b4632b22caf7",
+          "deleted": false
+        },
+        {
+          "path": "agent/site.py.bak-s3-endpoint-20260706-1239",
+          "mode": "100644",
+          "sha256": "6b46d4df8985a7076475e8b23b59208a7d2d1f83374d783506d38b77d15c1f7e",
+          "deleted": false
+        },
+        {
+          "path": "agent/web.py",
+          "mode": "100644",
+          "sha256": "b9e01c3ac7326d96b3932f51c0fbc58ae710e42808abc52fa015a5a9db098b46",
+          "deleted": false
+        },
+        {
+          "path": "agent/web.py.bak-upload-20260617-122647",
+          "mode": "100644",
+          "sha256": "aa03ad9c94a6f401fb79659fcfa37835143eb2b908d3ddfaee4ca577a3f931fe",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "f21.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/f21",
+      "upstream_base": "2a412bc2b1292176f0b6c8ea51240d743981f283",
+      "commit": "1926599b4823130cae8cb72c3ffb0e1d86bdacef",
+      "tree": "67a849a91cdcee7de748321e2a3a62c4918ca12f",
+      "captured_at_utc": "2026-10-14T21:02:30.419621+00:00",
+      "paths": 9,
+      "source_files": [
+        {
+          "path": "agent/bench.py",
+          "mode": "100644",
+          "sha256": "b1b798da1009bfb684d431d85a96467360c357dd71c7c56f72eaff0e71baa536",
+          "deleted": false
+        },
+        {
+          "path": "agent/bench.py.bak-codex-apparmor-20260726",
+          "mode": "100644",
+          "sha256": "111736425caae5d22ef9ede9f2ece52ef6819915fe003f4c1b2a55eb40982af3",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py",
+          "mode": "100644",
+          "sha256": "2854a281e2256611c1cd53d0ba49a4869e3e25ad0fe58028cc01435d5096ff68",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py.bak-wildcard-list-payload-20260828",
+          "mode": "100644",
+          "sha256": "a3d41957f96667adcde25c4ede9cd5d6575b6207b9085514d4a91cc0e789718a",
+          "deleted": false
+        },
+        {
+          "path": "agent/server.py",
+          "mode": "100644",
+          "sha256": "1a034d09e571fcac05dc41781303a0d8c7df74052556beab148a77351540f426",
+          "deleted": false
+        },
+        {
+          "path": "agent/server.py.bak-codex-apparmor-20260726",
+          "mode": "100644",
+          "sha256": "620d832838afba2fec95f52eef862242e179898cb9eb6948fa61a87612fa25d9",
+          "deleted": false
+        },
+        {
+          "path": "agent/site.py",
+          "mode": "100644",
+          "sha256": "3647bf382d783cad4c8a8a19fa8ad1d27356bf141619b383a61f54305a1e60f7",
+          "deleted": false
+        },
+        {
+          "path": "agent/site.py.106632.2026-07-14@09:16:15~",
+          "mode": "100644",
+          "sha256": "f2cc7b1a86b352142444f1f6a200e9ed2e2604d9dae4615f5204e986cb168b90",
+          "deleted": false
+        },
+        {
+          "path": "agent/site.py.bak-s3-endpoint-20260714",
+          "mode": "100644",
+          "sha256": "f2cc7b1a86b352142444f1f6a200e9ed2e2604d9dae4615f5204e986cb168b90",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "f3.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/f3",
+      "upstream_base": "bfc93524151d9f62e37207700998813c8312c7bb",
+      "commit": "e4960322fb12df35d78eab105bf3a377f85731ff",
+      "tree": "5118ea02b25b47f555741dd1711ce597e04a55c4",
+      "captured_at_utc": "2026-10-14T21:02:29.423733+00:00",
+      "paths": 15,
+      "source_files": [
+        {
+          "path": "agent/build_configs/get_cached_app.py",
+          "mode": "100644",
+          "sha256": "887fcb800e7511e42797908010c6bcf2333b81b33b0b0c0be7079c9049957961",
+          "deleted": false
+        },
+        {
+          "path": "agent/build_utils/validations.py",
+          "mode": "100644",
+          "sha256": "46596f3b10024d277c98246cf80eca7dca4a80fb4b73b56ea843d2474a49c4f5",
+          "deleted": false
+        },
+        {
+          "path": "agent/builder.py",
+          "mode": "100644",
+          "sha256": "3e6b012afd1856facb30ee373674f3b4bc628de8ab7d1cb0919dc25ae2cb9e49",
+          "deleted": false
+        },
+        {
+          "path": "agent/builder.py.bak-upload-20260617-122649",
+          "mode": "100644",
+          "sha256": "6c434d4706385006f2394e2badce74511dd143df6f20588d814ba77155414d5b",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-20260617-133815",
+          "mode": "100644",
+          "sha256": "76c7bd8ded6b018f8b02de9afdd08835bb6495564f5fde1413050d9a2bc10260",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py",
+          "mode": "100644",
+          "sha256": "7798686a7e114ffc8c82bd805513ed6a6e765b0b6de9663d840b675e11198c53",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py.bak-redis-host-20260617-130406",
+          "mode": "100644",
+          "sha256": "3d04cdd3d49f7ab700ab7c6c4aa59c6ff161ddcfe1b5d659a546396c9ac6983b",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-20260617-133815",
+          "mode": "100644",
+          "sha256": "b84e1f868180745151922149bcc681317505c5d646b7547cf32a068c42585064",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        },
+        {
+          "path": "agent/templates/agent/supervisor.conf.jinja2",
+          "mode": "100644",
+          "sha256": "5d01ecfcee53b88b2c434e343c61cfe1f3b25abd717147e4886162718b2c886c",
+          "deleted": false
+        },
+        {
+          "path": "agent/web.py",
+          "mode": "100644",
+          "sha256": "b9e01c3ac7326d96b3932f51c0fbc58ae710e42808abc52fa015a5a9db098b46",
+          "deleted": false
+        },
+        {
+          "path": "agent/web.py.bak-upload-20260617-122649",
+          "mode": "100644",
+          "sha256": "aa03ad9c94a6f401fb79659fcfa37835143eb2b908d3ddfaee4ca577a3f931fe",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "l1.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/l1",
+      "upstream_base": "cc3f61b8d0424e0da4b5bb8223413a4095143fa2",
+      "commit": "cc3f61b8d0424e0da4b5bb8223413a4095143fa2",
+      "tree": "3d1dc350cb3826c25ec79c3ee353aa374bfafb3d",
+      "captured_at_utc": "2026-10-14T21:02:43.958997+00:00",
+      "paths": 0,
+      "source_files": []
+    },
+    {
+      "host": "m1.dev.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/m1.dev",
+      "upstream_base": "185054c73be9b171a7dfdc9180e4bc55d2692067",
+      "commit": "0b4ed06b04c78a016e52579bcb3a41c4773aaa5f",
+      "tree": "40a5c72a09c3f3545d3aa7795f99104439af5869",
+      "captured_at_utc": "2026-10-14T21:02:37.999691+00:00",
+      "paths": 1,
+      "source_files": [
+        {
+          "path": "agent/site.py",
+          "mode": "100644",
+          "sha256": "3647bf382d783cad4c8a8a19fa8ad1d27356bf141619b383a61f54305a1e60f7",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "m1.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/m1",
+      "upstream_base": "38bdef47c385bbd344862f89e813b0a04beb485c",
+      "commit": "dd7cbd8e1ea6f2e7d52d641591c27a243fa70c04",
+      "tree": "361c329e2a94cdc289d50e3a93276fda96b97ff7",
+      "captured_at_utc": "2026-10-14T21:02:36.124022+00:00",
+      "paths": 2,
+      "source_files": [
+        {
+          "path": "agent/database_server.py",
+          "mode": "100644",
+          "sha256": "de184e2c0736d7d5424f50c9f9eb58f0b585657100a6a54155b735d7a0f36e2d",
+          "deleted": false
+        },
+        {
+          "path": "agent/database_server.py.before-uniai-exclusion-20261001",
+          "mode": "100644",
+          "sha256": "873f9fe1f72740a1671f485bcbacdbd7281e7109ca244565de98026cc8d740e4",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "m2.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/m2",
+      "upstream_base": "bfc93524151d9f62e37207700998813c8312c7bb",
+      "commit": "61f74b0d84edcb55d1039ab47d147cf4430ae08d",
+      "tree": "fde9b908fe7224ba3cabd2e736af40f52ce219cc",
+      "captured_at_utc": "2026-10-14T21:02:37.131694+00:00",
+      "paths": 8,
+      "source_files": [
+        {
+          "path": "agent/exporter.py",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-20260617-133815",
+          "mode": "100644",
+          "sha256": "76c7bd8ded6b018f8b02de9afdd08835bb6495564f5fde1413050d9a2bc10260",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py",
+          "mode": "100644",
+          "sha256": "7798686a7e114ffc8c82bd805513ed6a6e765b0b6de9663d840b675e11198c53",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py.bak-redis-host-20260617-133449",
+          "mode": "100644",
+          "sha256": "3d04cdd3d49f7ab700ab7c6c4aa59c6ff161ddcfe1b5d659a546396c9ac6983b",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-20260617-133815",
+          "mode": "100644",
+          "sha256": "b84e1f868180745151922149bcc681317505c5d646b7547cf32a068c42585064",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "ms1.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/ms1",
+      "upstream_base": "38bdef47c385bbd344862f89e813b0a04beb485c",
+      "commit": "38bdef47c385bbd344862f89e813b0a04beb485c",
+      "tree": "26f06f92fc2d974790729170a397fd3aa2e63ebc",
+      "captured_at_utc": "2026-10-14T21:02:41.962286+00:00",
+      "paths": 0,
+      "source_files": []
+    },
+    {
+      "host": "n1.dev.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/n1.dev",
+      "upstream_base": "185054c73be9b171a7dfdc9180e4bc55d2692067",
+      "commit": "401e58590dddb1a074ed062f969d9357f59bbcc6",
+      "tree": "de57f0d490941a54f81fcd5b0d0260d852bbcb92",
+      "captured_at_utc": "2026-10-14T21:02:42.165964+00:00",
+      "paths": 3,
+      "source_files": [
+        {
+          "path": "agent/site.py",
+          "mode": "100644",
+          "sha256": "3647bf382d783cad4c8a8a19fa8ad1d27356bf141619b383a61f54305a1e60f7",
+          "deleted": false
+        },
+        {
+          "path": "agent/templates/proxy/nginx.conf.jinja2",
+          "mode": "100644",
+          "sha256": "c13f7bb9245d92026fe2d4a50a031af2cbe4b9ecafd78782e8697ba1dc3f8ec1",
+          "deleted": false
+        },
+        {
+          "path": "agent/templates/proxy/nginx.conf.jinja2.bak-codex-ws-20260723T092012Z",
+          "mode": "100644",
+          "sha256": "ab14cf2fdfb160ed8e2737b36896e718467c1cbbf1652b8a9573e62a9483d3de",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "n1.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/n1",
+      "upstream_base": "38bdef47c385bbd344862f89e813b0a04beb485c",
+      "commit": "be4a1f6715cc925876b7cfa1c4543603d882ec54",
+      "tree": "7bc7ea1b03a4c7e698327d2b08b04c8f69722c94",
+      "captured_at_utc": "2026-10-14T21:02:36.896369+00:00",
+      "paths": 2,
+      "source_files": [
+        {
+          "path": "agent/pages/deactivated.html",
+          "mode": "100644",
+          "sha256": "91c5b50dd1f6d662b8afe4c21cb4891348e4a5c40c5ec8ca7a804e89d43dd529",
+          "deleted": false
+        },
+        {
+          "path": "agent/pages/deactivated.html.bak-20260622-subscription-expired",
+          "mode": "100644",
+          "sha256": "eb9bc95227fde2a4967534f271d18ade9ab8dd25e194de63b115bfb10861489a",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "n2.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/n2",
+      "upstream_base": "bfc93524151d9f62e37207700998813c8312c7bb",
+      "commit": "7636769e065a17ca27ee92701bf44a74281540b5",
+      "tree": "9d4b8d81be0f23378a728896654e1df4219b7080",
+      "captured_at_utc": "2026-10-14T21:02:39.404146+00:00",
+      "paths": 14,
+      "source_files": [
+        {
+          "path": "agent/exporter.py",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-20260617-133815",
+          "mode": "100644",
+          "sha256": "76c7bd8ded6b018f8b02de9afdd08835bb6495564f5fde1413050d9a2bc10260",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py",
+          "mode": "100644",
+          "sha256": "7798686a7e114ffc8c82bd805513ed6a6e765b0b6de9663d840b675e11198c53",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py.bak-redis-host-20260617-133449",
+          "mode": "100644",
+          "sha256": "3d04cdd3d49f7ab700ab7c6c4aa59c6ff161ddcfe1b5d659a546396c9ac6983b",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-20260617-133815",
+          "mode": "100644",
+          "sha256": "b84e1f868180745151922149bcc681317505c5d646b7547cf32a068c42585064",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        },
+        {
+          "path": "agent/proxy.py",
+          "mode": "100644",
+          "sha256": "c7ed76c955ae5e949f1647fc45afeb9fe49c4feb40172637dafdbb4636196b19",
+          "deleted": false
+        },
+        {
+          "path": "agent/proxy.py.bak-codex-20260810-empty-cert-guard",
+          "mode": "100644",
+          "sha256": "2f50535c4a1c0693376bb33a14e492ea3fd8df7973b7be49e08625cb9077da87",
+          "deleted": false
+        },
+        {
+          "path": "agent/ssh.py",
+          "mode": "100644",
+          "sha256": "e40a4532877cd3efd1fda686ef4f51902e7bf703281cbe9654a6f40730d80519",
+          "deleted": false
+        },
+        {
+          "path": "agent/ssh.py.bak-docker-exec-shell-20260618-1736",
+          "mode": "100644",
+          "sha256": "141510b68e2c082d1ca59e17d2f293b5393fbe4a584b84b25b1cc3809d6f3fb6",
+          "deleted": false
+        },
+        {
+          "path": "agent/ssh.py.bak-docker-exec-shell-20260618-1742",
+          "mode": "100644",
+          "sha256": "141510b68e2c082d1ca59e17d2f293b5393fbe4a584b84b25b1cc3809d6f3fb6",
+          "deleted": false
+        },
+        {
+          "path": "agent/ssh.py.bak-idempotent-ssh-20260617-191705",
+          "mode": "100644",
+          "sha256": "88fd303545214f52c50c76c2ebce409ab77e343947d0f2cd8a4207760af042a7",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "naya-f1.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/naya-f1",
+      "upstream_base": "185054c73be9b171a7dfdc9180e4bc55d2692067",
+      "commit": "4c7b1666a5d7b1ae935f2750f88404ac48975d97",
+      "tree": "f5a70341f43a062026b67d2087ca1ef665dca7f0",
+      "captured_at_utc": "2026-10-14T21:02:30.401380+00:00",
+      "paths": 5,
+      "source_files": [
+        {
+          "path": "agent/bench.py",
+          "mode": "100644",
+          "sha256": "b1b798da1009bfb684d431d85a96467360c357dd71c7c56f72eaff0e71baa536",
+          "deleted": false
+        },
+        {
+          "path": "agent/bench.py.bak-codex-apparmor-20260726",
+          "mode": "100644",
+          "sha256": "111736425caae5d22ef9ede9f2ece52ef6819915fe003f4c1b2a55eb40982af3",
+          "deleted": false
+        },
+        {
+          "path": "agent/server.py",
+          "mode": "100644",
+          "sha256": "1a034d09e571fcac05dc41781303a0d8c7df74052556beab148a77351540f426",
+          "deleted": false
+        },
+        {
+          "path": "agent/server.py.bak-codex-apparmor-20260726",
+          "mode": "100644",
+          "sha256": "620d832838afba2fec95f52eef862242e179898cb9eb6948fa61a87612fa25d9",
+          "deleted": false
+        },
+        {
+          "path": "agent/site.py",
+          "mode": "100644",
+          "sha256": "3647bf382d783cad4c8a8a19fa8ad1d27356bf141619b383a61f54305a1e60f7",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "naya-n1.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/naya-n1",
+      "upstream_base": "185054c73be9b171a7dfdc9180e4bc55d2692067",
+      "commit": "06a360f124bcf4b79161c0fccd1b242c6aaf3d00",
+      "tree": "40a5c72a09c3f3545d3aa7795f99104439af5869",
+      "captured_at_utc": "2026-10-14T21:02:41.598246+00:00",
+      "paths": 1,
+      "source_files": [
+        {
+          "path": "agent/site.py",
+          "mode": "100644",
+          "sha256": "3647bf382d783cad4c8a8a19fa8ad1d27356bf141619b383a61f54305a1e60f7",
+          "deleted": false
+        }
+      ]
+    },
+    {
+      "host": "r2.univenturescloud.com",
+      "repository": "agent",
+      "branch": "preserve/2026-10-15/r2",
+      "upstream_base": "bfc93524151d9f62e37207700998813c8312c7bb",
+      "commit": "3999d213cb7f2e425a36880a4f46e06b60b527db",
+      "tree": "fde9b908fe7224ba3cabd2e736af40f52ce219cc",
+      "captured_at_utc": "2026-10-14T21:03:58.689961+00:00",
+      "paths": 8,
+      "source_files": [
+        {
+          "path": "agent/exporter.py",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-20260617-133815",
+          "mode": "100644",
+          "sha256": "76c7bd8ded6b018f8b02de9afdd08835bb6495564f5fde1413050d9a2bc10260",
+          "deleted": false
+        },
+        {
+          "path": "agent/exporter.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "ae7348e172c2b4f44a30b0da49e44e1e1d49d77363f80469cd8415d375057623",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py",
+          "mode": "100644",
+          "sha256": "7798686a7e114ffc8c82bd805513ed6a6e765b0b6de9663d840b675e11198c53",
+          "deleted": false
+        },
+        {
+          "path": "agent/job.py.bak-redis-host-20260617-133449",
+          "mode": "100644",
+          "sha256": "3d04cdd3d49f7ab700ab7c6c4aa59c6ff161ddcfe1b5d659a546396c9ac6983b",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-20260617-133815",
+          "mode": "100644",
+          "sha256": "b84e1f868180745151922149bcc681317505c5d646b7547cf32a068c42585064",
+          "deleted": false
+        },
+        {
+          "path": "agent/nginx_reload_manager.py.bak-redis-host-extra-20260617-184435",
+          "mode": "100644",
+          "sha256": "f5b519f38ef787ddd99b91cf750fa308df621ec630d202a534fa24d36c076cc7",
+          "deleted": false
+        }
+      ]
+    }
+  ]
+}
