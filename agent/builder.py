@@ -107,6 +107,7 @@ class JobMixin:
 
 @dataclass
 class ContextManager(Base, JobMixin):
+    CODE_SERVER_VERSION = "4.129.0"
     # We need to keep the job context same everywhere.
     # Therefore pass this from the ImageBuilder
     _job_context: JobContext
@@ -267,14 +268,24 @@ class ContextManager(Base, JobMixin):
         return packages
 
     def _inject_additional_packages(self, packages: list[str]):
-        """This hack simply injects the additional packages discovered post cloning"""
-        if not packages:
-            return
-
+        """Inject Code Server and app-defined apt packages into the generated Dockerfile."""
         end_marker = "RUN test -f /usr/bin/mariadb-dump || ln -s /usr/bin/mysqldump /usr/bin/mariadb-dump"
         dockerfile_path = os.path.join(self.build_directory, "Dockerfile")
 
-        lines = []
+        lines = [
+            f"RUN set -eux; \\\n"
+            f"  arch=$(dpkg --print-architecture); \\\n"
+            f"  case \\\"$arch\\\" in amd64|arm64) ;; *) echo \\\"Unsupported architecture: $arch\\\" >&2; exit 1;; esac; \\\n"
+            f"  apt-get update; \\\n"
+            f"  curl -fsSL -o /tmp/code-server_{self.CODE_SERVER_VERSION}_${{arch}}.deb "
+            f"https://github.com/coder/code-server/releases/download/v{self.CODE_SERVER_VERSION}/code-server_{self.CODE_SERVER_VERSION}_${{arch}}.deb; \\\n"
+            f"  apt-get install --yes --no-install-suggests --no-install-recommends /tmp/code-server_{self.CODE_SERVER_VERSION}_${{arch}}.deb; \\\n"
+            f"  code-server --version; \\\n"
+            f"  rm -f /tmp/code-server_{self.CODE_SERVER_VERSION}_${{arch}}.deb; \\\n"
+            f"  rm -rf /var/lib/apt/lists/* \\\n"
+            f"  `#stage-pre-code-server`"
+        ]
+
         for package in packages:
             lines.append(
                 f"RUN apt-get update \\\n"
@@ -288,7 +299,8 @@ class ContextManager(Base, JobMixin):
         with open(dockerfile_path, "r") as f:
             content = f.read()
 
-        content = content.replace(end_marker, f"{injection}\n\n{end_marker}", 1)
+        if "`#stage-pre-code-server`" not in content:
+            content = content.replace(end_marker, f"{injection}\n\n{end_marker}", 1)
 
         with open(dockerfile_path, "w") as f:
             f.write(content)

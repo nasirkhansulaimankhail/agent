@@ -742,6 +742,7 @@ class Bench(Base):
     @job("Setup Code Server")
     def setup_code_server(self, name, password):
         self.create_code_server_config(name)
+        self.ensure_code_server_runtime()
         self._start_code_server(password, setup=True)
         self.generate_nginx_config()
         self.server._reload_nginx()
@@ -755,6 +756,34 @@ class Bench(Base):
         filename = os.path.join(code_server_path, name)
         with open(filename, "w") as file:
             file.write(str(self.bench_config.get("codeserver_port")))
+
+    @step("Ensure Code Server Runtime")
+    def ensure_code_server_runtime(self):
+        result = self.docker_execute("command -v code-server", non_zero_throw=False)
+        if result.get("returncode") == 0 and result.get("output", "").strip():
+            return result
+
+        cache = "/home/frappe/agent/code-server-runtime/4.129.0"
+        required_paths = {
+            "binary": os.path.join(cache, "code-server"),
+            "library": os.path.join(cache, "code-server-lib"),
+        }
+        missing = [label for label, path in required_paths.items() if not os.path.exists(path)]
+        if missing:
+            raise AgentException(
+                {
+                    "status": "Failure",
+                    "output": (
+                        "code-server is missing in the bench container and the "
+                        f"agent runtime cache is incomplete: {', '.join(missing)}"
+                    ),
+                }
+            )
+
+        self.execute(f"docker cp {required_paths['binary']} {self.name}:/usr/bin/code-server")
+        self.execute(f"docker cp {required_paths['library']} {self.name}:/usr/lib/code-server")
+        self.docker_execute("chmod 755 /usr/bin/code-server", as_root=True)
+        return self.docker_execute("code-server --version")
 
     @step("Start Code Server")
     def _start_code_server(self, password, setup=False):
@@ -772,6 +801,7 @@ class Bench(Base):
 
     @job("Start Code Server")
     def start_code_server(self, password):
+        self.ensure_code_server_runtime()
         self._start_code_server(password)
 
     @job("Stop Code Server")
@@ -847,6 +877,7 @@ class Bench(Base):
                 "docker run -d --init -u frappe "
                 f"--restart always --hostname {self.name} "
                 "--security-opt seccomp=unconfined "
+                "--security-opt apparmor=unconfined "
                 f"-p 127.0.0.1:{self.bench_config['web_port']}:8000 "
                 f"-p 127.0.0.1:{self.bench_config['socketio_port']}:9000 "
                 f"-p 127.0.0.1:{self.bench_config['codeserver_port']}:8088 "
