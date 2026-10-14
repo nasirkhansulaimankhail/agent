@@ -200,7 +200,9 @@ def job(name: str, priority="default", timeout=None, on_success=None, on_failure
         agent_job_id = get_agent_job_id()
         agent_job_timeout = None
         if has_request_context() and request and request.is_json:
-            agent_job_timeout = request.json.get("agent_job_timeout", None)
+            request_data = request.get_json(silent=True)
+            if isinstance(request_data, dict):
+                agent_job_timeout = request_data.get("agent_job_timeout", None)
         instance.job_record.enqueue(name, wrapped, args, kwargs, agent_job_id)
         final_timeout = (
             agent_job_timeout or timeout or Server().config.get("job_timeout", None) or DEFAULT_TIMEOUT
