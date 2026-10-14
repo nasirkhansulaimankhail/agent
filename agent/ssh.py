@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 import tempfile
 
 from agent.job import job, step
@@ -21,7 +22,7 @@ class SSHProxy(Server):
         self.step = None
 
     def docker_execute(self, command):
-        command = f"docker exec ssh {command}"
+        command = f"docker exec ssh sh -lc {shlex.quote(command)}"
         return self.execute(command)
 
     @job("Add User to Proxy")
@@ -32,11 +33,11 @@ class SSHProxy(Server):
 
     @step("Add User to Proxy")
     def add_user(self, name):
-        return self.docker_execute(f"useradd -m -p '*' {name}")
+        return self.docker_execute(f"id -u {name} >/dev/null 2>&1 || useradd -m -p '*' {name}")
 
     @step("Add Certificate to User")
     def add_certificate(self, name, certificate):
-        self.docker_execute(f"mkdir /home/{name}/.ssh")
+        self.docker_execute(f"mkdir -p /home/{name}/.ssh")
         self.docker_execute(f"chown {name}:{name} /home/{name}/.ssh")
         for key, value in certificate.items():
             source = tempfile.mkstemp()[1]
@@ -67,9 +68,9 @@ class SSHProxy(Server):
 
     @step("Remove User from Proxy")
     def remove_user(self, name):
-        return self.docker_execute(f"userdel -f -r {name}")
+        return self.docker_execute(f"id -u {name} >/dev/null 2>&1 && userdel -f -r {name} || true")
 
     @step("Remove Principal from User")
     def remove_principal(self, name):
-        command = f"rm /etc/ssh/principals/{name}"
+        command = f"rm -f /etc/ssh/principals/{name}"
         return self.docker_execute(command)

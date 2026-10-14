@@ -57,6 +57,17 @@ class Proxy(Server):
     @with_proxy_config_lock()
     def add_host(self, host, target, certificate):
         host_directory = os.path.join(self.hosts_directory, host)
+        required_certificate_files = ("chain.pem", "fullchain.pem", "privkey.pem")
+        has_complete_certificate = certificate and all(
+            isinstance(certificate.get(filename), str)
+            and certificate[filename].strip()
+            for filename in required_certificate_files
+        )
+        if not has_complete_certificate:
+            if os.path.isdir(host_directory):
+                shutil.rmtree(host_directory)
+            return
+
         os.makedirs(host_directory, exist_ok=True)
 
         map_file = os.path.join(host_directory, "map.json")
