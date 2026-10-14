@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>This Site is Inactive</title>
+        <title>Subscription Expired</title>
         <style>
             html {
                 -webkit-font-smoothing: antialiased;
@@ -93,7 +93,7 @@
                     </defs>
                 </svg>
                 <div class="logo-text">
-                    <h1>Frappe Cloud</h1>
+                    <h1>UniVentures Cloud</h1>
                 </div>
             </div>
             <div class="message-container">
@@ -105,11 +105,12 @@
                     </svg>
                 </div>
                 <h1>
-                    This Site is Inactive.
+                    Subscription Expired.
                 </h1>
                 <p class="message">
-                    This site has been deactivated. If you are the owner of this site, you can activate it from your
-                    <a class="dashboard-url" href="https://frappecloud.com/dashboard">Frappe Cloud Dashboard</a>.
+                    Access to this site is paused because the subscription has expired. Please settle any pending
+                    invoices in your <a class="dashboard-url" href="https://univenturescloud.com/dashboard">UniVentures Cloud Dashboard</a>
+                    to restore service.
                 </p>
             </div>
         </div>
@@ -118,6 +119,6 @@
     <script>
         const dashboardUrl = document.querySelector('.dashboard-url');
         const siteName = window.location.hostname;        
-        dashboardUrl.href = `https://frappecloud.com/dashboard/sites/${siteName}`;
+        dashboardUrl.href = `https://univenturescloud.com/dashboard/sites/${siteName}`;
     </script>
 </html>
