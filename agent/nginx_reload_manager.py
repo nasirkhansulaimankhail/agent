@@ -244,6 +244,7 @@ class NginxReloadManager:
     def redis(self):
         if not self.redis_instance:
             self.redis_instance = redis.Redis(
+                host="127.0.0.1",
                 port=self.config.get("redis_port", 25025),
                 decode_responses=True,
             )
