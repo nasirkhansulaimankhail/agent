@@ -53,7 +53,7 @@ def connection():
     from agent.server import Server
 
     port = Server().config["redis_port"]
-    return Redis(port=port)
+    return Redis(host="127.0.0.1", port=port)
 
 
 def queue(name):

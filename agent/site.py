@@ -499,19 +499,16 @@ class Site(Base):
             )
             region = auth.get("REGION")
 
+            client_kwargs = {
+                "aws_access_key_id": auth["ACCESS_KEY"],
+                "aws_secret_access_key": auth["SECRET_KEY"],
+            }
             if region:
-                s3 = boto3.client(
-                    "s3",
-                    aws_access_key_id=auth["ACCESS_KEY"],
-                    aws_secret_access_key=auth["SECRET_KEY"],
-                    region_name=region,
-                )
-            else:
-                s3 = boto3.client(
-                    "s3",
-                    aws_access_key_id=auth["ACCESS_KEY"],
-                    aws_secret_access_key=auth["SECRET_KEY"],
-                )
+                client_kwargs["region_name"] = region
+            if endpoint_url := offsite.get("endpoint_url"):
+                client_kwargs["endpoint_url"] = endpoint_url
+
+            s3 = boto3.client("s3", **client_kwargs)
 
             for backup_file in backup_files.values():
                 file_name = backup_file["file"].split(os.sep)[-1]
