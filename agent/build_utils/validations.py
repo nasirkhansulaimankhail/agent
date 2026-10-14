@@ -124,30 +124,11 @@ def get_package_manager_files(repo_path_map: Dict[str, str]) -> PackageManagerFi
 
 
 def check_python_syntax(dirpath: str) -> str:
-    """
-    Script `compileall` will compile all the Python files
-    in the given directory.
-
-    If there are errors then return code will be non-zero.
-
-    Flags:
-    - -q: quiet, only print errors (stdout)
-    - -o: optimize level, 0 is no optimization
-    """
-    _python = get_python_path(dirpath)
-    command = f"{_python} -m compileall -q -o 0 {dirpath}"
-    proc = subprocess.run(
-        shlex.split(command),
-        text=True,
-        capture_output=True,
-    )
-    if proc.returncode == 0:
-        return ""
-
-    if not proc.stdout:
-        return proc.stderr
-
-    return proc.stdout
+    # Self-hosted f3 build server hotfix: the old agent validates modern Frappe
+    # releases with host Python before Docker build. Frappe v16 uses Python 3.12+
+    # syntax, while this Ubuntu 22.04 agent host only has Python 3.10. Skip this
+    # host-side compile check and let the Docker build validate the image.
+    return ""
 
 
 def get_python_path(dirpath: str) -> str:

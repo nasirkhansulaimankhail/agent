@@ -45,7 +45,7 @@ class RQCollector(Collector):
     def __init__(self, name: str, port: int):
         self.name = name
         self.port = port
-        self.conn = Redis(port=port)
+        self.conn = Redis(host="127.0.0.1", port=port)
         super().__init__()
 
     def collect(self):
