@@ -105,6 +105,9 @@ WHERE `schema` IN (
         users = db.execute_sql(
             'SELECT DISTINCT user, host FROM mysql.user WHERE user not in ("mysql", "root", "mariadb.sys", "read_all_press_meta", "monitor");'  # noqa: E501
         ).fetchall()
+        # Dedicated site-only readers must not receive cross-schema metadata grants.
+        excluded = set(self.config.get("press_meta_excluded_users", []))
+        users = [user for user in users if user[0] not in excluded]
         if users:
             # Grant usage and read_all_press_meta role to all users
             query = "GRANT USAGE ON press_meta.* TO "
