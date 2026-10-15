@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import sys
 import traceback
 from base64 import b64decode
@@ -17,8 +16,9 @@ from rq.exceptions import NoSuchJobError
 from rq.job import Job as RQJob
 from rq.job import JobStatus
 
+from agent.backup_log import InvalidRange, parse_range
 from agent.base import AgentException
-from agent.builder import ImageBuilder, get_image_build_context_directory
+from agent.builder import ImageBuilder
 from agent.database import JSONEncoderForSQLQueryResult
 from agent.database_physical_backup import DatabasePhysicalBackup
 from agent.database_physical_restore import DatabasePhysicalRestore
@@ -186,30 +186,23 @@ def ping_job():
     }
 
 
-@application.route("/builder/upload/<string:dc_name>", methods=["POST"])
-def upload_build_context_for_image_builder(dc_name: str):
-    filename = f"{dc_name}.tar.gz"
-    filepath = os.path.join(get_image_build_context_directory(), filename)
-    if os.path.exists(filepath):
-        os.unlink(filepath)
-
-    build_context_file = request.files["build_context_file"]
-    build_context_file.save(filepath)
-    return {"filename": filename}
-
-
 @application.route("/builder/build", methods=["POST"])
 def build_image():
     data = request.json
     image_builder = ImageBuilder(
-        filename=data.get("filename"),
         image_repository=data.get("image_repository"),
         image_tag=data.get("image_tag"),
         no_cache=data.get("no_cache"),
         no_push=data.get("no_push"),
         registry=data.get("registry"),
-        platform=data.get("platform", "linux/amd64"),
+        platform=data.get("platform", "x86_64"),
         build_token=data.get("build_token"),
+        dockerfile=b64decode(data.get("dockerfile")).decode(),
+        clone_instructions=data.get("clone_instructions"),
+        group=data.get("group"),
+        build_name=data.get("deploy_candidate_build"),
+        deploy_candidate_params=data.get("deploy_candidate_params"),
+        ssh_keys=data.get("ssh_keys"),
     )
     job = image_builder.run_remote_builder()
     return {"job": job}
@@ -328,6 +321,7 @@ def update_nginx_ip_access():
     job = Server().update_nginx_access(
         ip_accept=data.get("ip_accept", []),
         ip_drop=data.get("ip_drop", []),
+        proxy_ip=data.get("proxy_ip"),
     )
     return {"job": job}
 
@@ -570,6 +564,7 @@ def new_site_from_backup(bench):
             data.get("public"),
             data.get("private"),
             data.get("skip_failing_patches", False),
+            data.get("skip_migrate", False),
         )
     )
     return {"job": job}
@@ -591,6 +586,7 @@ def restore_site(bench, site):
             data["database"],
             data.get("public"),
             data.get("private"),
+            data.get("sanitized_config_content"),
             data.get("skip_failing_patches", False),
         )
     )
@@ -722,13 +718,21 @@ def backup_site(bench, site):
     with_files = data.get("with_files")
     offsite = data.get("offsite")
     keep_files_locally_after_offsite_backup = data.get("keep_files_locally_after_offsite_backup", False)
+    stream = data.get("stream", False)
 
     job = (
         Server()
         .benches[bench]
         .sites[site]
-        .backup_job(with_files, offsite, keep_files_locally_after_offsite_backup)
+        .backup_job(with_files, offsite, keep_files_locally_after_offsite_backup, stream)
     )
+    return {"job": job}
+
+
+@application.route("/benches/<string:bench>/sites/<string:site>/fix_global_search", methods=["POST"])
+@validate_bench_and_site
+def fix_global_search(bench, site):
+    job = Server().benches[bench].sites[site].fix_global_search()
     return {"job": job}
 
 
@@ -1317,6 +1321,18 @@ def refresh_database_usage():
     return {"job": job}
 
 
+@application.route("/database/check-and-repair-tables", methods=["POST"])
+def check_and_repair_tables():
+    data = request.json
+    job = DatabaseServer().check_and_repair_tables_job(
+        private_ip=data["private_ip"],
+        mariadb_root_password=data["mariadb_root_password"],
+        database=data["database"],
+        tables=data.get("tables"),
+    )
+    return {"job": job}
+
+
 @application.route("/database/binary/logs")
 def get_binary_logs():
     return jsonify(DatabaseServer().binary_logs)
@@ -1344,21 +1360,6 @@ def get_database_locks():
 def kill_database_processes():
     data = request.json
     return jsonify(DatabaseServer().kill_processes(**data))
-
-
-@application.route("/database/binary/logs/<string:log>", methods=["POST"])
-def get_binary_log(log):
-    data = request.json
-    return jsonify(
-        DatabaseServer().search_binary_log(
-            log,
-            data["database"],
-            data["start_datetime"],
-            data["stop_datetime"],
-            data["search_pattern"],
-            data["max_lines"],
-        )
-    )
 
 
 @application.route("/database/stalks")
@@ -1414,6 +1415,18 @@ def get_binlogs():
 def upload_binlogs_to_s3():
     data = request.json
     job = DatabaseServer().upload_binlogs_to_s3_job(**data)
+    return {"job": job}
+
+
+@application.route("/database/audit-logs/list", methods=["GET"])
+def get_audit_logs():
+    return jsonify(DatabaseServer().get_audit_logs())
+
+
+@application.route("/database/audit-logs/upload", methods=["POST"])
+def upload_audit_logs_to_s3():
+    data = request.json
+    job = DatabaseServer().upload_audit_logs_to_s3_job(**data)
     return {"job": job}
 
 
@@ -1625,6 +1638,27 @@ def jobs(id=None, ids=None, status=None):
         data = get_jobs(limit=100)
 
     return jsonify(json.loads(json.dumps(data, default=str)))
+
+
+@application.route("/server/backup-jobs", methods=["POST"])
+def fetch_backup_jobs():
+    """Queue a read of the job database for one site's backups, for an audit of a past date.
+
+    Scoped to the named site and a bounded date range, so it cannot be used to walk the
+    whole job database or read another site's runs. The range is checked here so a bad
+    one is a failed request rather than a failed job.
+    """
+    site = request.args.get("site")
+    if not site:
+        return jsonify({"message": "site is required"}), 400
+
+    try:
+        parse_range(request.args.get("start"), request.args.get("end"))
+    except InvalidRange as e:
+        return jsonify({"message": str(e)}), 400
+
+    job = Server().fetch_backup_jobs(site, request.args.get("start"), request.args.get("end"))
+    return {"job": job}
 
 
 @application.route("/jobs/<int:id>/cancel", methods=["POST"])
