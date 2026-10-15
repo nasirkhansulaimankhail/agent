@@ -619,8 +619,7 @@ class Site(Base):
                 # releases it.
                 holder_script = 'exec 3> "$1"; shift; "$@"; rc=$?; exec 3>&-; exit $rc'
                 backup_command = " ".join(
-                    quote(part)
-                    for part in ["bash", "-c", holder_script, "_", backup_path_db, *bench_argv]
+                    quote(part) for part in ["bash", "-c", holder_script, "_", backup_path_db, *bench_argv]
                 )
                 self.bench.docker_execute(backup_command)
             finally:
@@ -649,16 +648,14 @@ class Site(Base):
                 offsite["auth"],
                 offsite["path"],
             )
-            region = auth.get("REGION")
             client_kwargs = {
                 "aws_access_key_id": auth["ACCESS_KEY"],
                 "aws_secret_access_key": auth["SECRET_KEY"],
             }
-            if region:
+            if region := auth.get("REGION"):
                 client_kwargs["region_name"] = region
-            if endpoint_url := offsite.get("endpoint_url"):
-                client_kwargs["endpoint_url"] = endpoint_url
-
+            if endpoint := auth.get("ENDPOINT_URL") or offsite.get("endpoint_url"):
+                client_kwargs["endpoint_url"] = endpoint
             s3 = boto3.client("s3", **client_kwargs)
 
             for backup_file in backup_files.values():
@@ -851,6 +848,23 @@ class Site(Base):
     def resume_scheduler(self):
         return self.bench_execute("scheduler resume")
 
+    @job("Fix global search")
+    def fix_global_search(self):
+        self.truncate_global_search()
+        self.rebuild_global_search_step()
+
+    @step("Truncate Global Search Table")
+    def truncate_global_search(self):
+        # TRUNCATE recreates a crashed MyISAM table from its definition, even when REPAIR fails
+        result = self.run_sql_query("TRUNCATE TABLE __global_search", commit=True, as_dict=False)
+        if not result["success"]:
+            raise AgentException({"traceback": f"Failed to truncate __global_search: {result['data']}"})
+        return result
+
+    @step("Rebuild global search")
+    def rebuild_global_search_step(self):
+        return self.bench_execute("rebuild-global-search")
+
     def fetch_site_status(self):
         data = {
             "scheduler": True,
@@ -981,7 +995,12 @@ print(">>>" + frappe.session.sid + "<<<")
             return True
         return value == "1"
 
-    @job("Backup Site", priority="low")
+    def streamed_backup_prefix(self, todays_dt: str) -> str:
+        # Frappe's site slug goes before the marker, so its "*-{slug}-database.sql.gz"
+        # glob for recent backups never matches one of these FIFOs.
+        return f"{todays_dt}-{self.name.replace('.', '_')}-%stream%"
+
+    @job("Backup Site", priority="backup")
     def backup_job(  # noqa: C901
         self,
         with_files=False,
@@ -1017,10 +1036,11 @@ print(">>>" + frappe.session.sid + "<<<")
                     {"traceback": "Streaming backup requires rclone, but it was not found on PATH."}
                 )
             todays_dt = datetime.now().strftime("%Y%m%d_%H%M%S")
-            public_file = todays_dt + "-%stream%-files.tar"
-            db_file = todays_dt + "-%stream%-database.sql.gz"
-            private_file = todays_dt + "-%stream%-private-files.tar"
-            config_file = todays_dt + "-%stream%-site_config_backup.json"
+            file_prefix = self.streamed_backup_prefix(todays_dt)
+            public_file = file_prefix + "-files.tar"
+            db_file = file_prefix + "-database.sql.gz"
+            private_file = file_prefix + "-private-files.tar"
+            config_file = file_prefix + "-site_config_backup.json"
 
             files_to_stream = [config_file, db_file]
             if with_files:
@@ -1285,8 +1305,7 @@ print(">>>" + frappe.session.sid + "<<<")
                         rclone_failures[file] = {"exit": ret, "error": err}
                     if rclone_failures:
                         signal_killed = any(
-                            isinstance(d["exit"], int) and d["exit"] < 0
-                            for d in rclone_failures.values()
+                            isinstance(d["exit"], int) and d["exit"] < 0 for d in rclone_failures.values()
                         )
                         hint = (
                             " (negative exit = killed by a signal, likely OOM/earlyoom)"
@@ -1354,8 +1373,15 @@ print(">>>" + frappe.session.sid + "<<<")
                         with contextlib.suppress(Exception):
                             subprocess.run(
                                 [
-                                    "rclone", "deletefile", *s3_flags,
-                                    "--contimeout", "60s", "--timeout", "60s", "--retries", "1",
+                                    "rclone",
+                                    "deletefile",
+                                    *s3_flags,
+                                    "--contimeout",
+                                    "60s",
+                                    "--timeout",
+                                    "60s",
+                                    "--retries",
+                                    "1",
                                     f":s3:{bucket}/{prefix}/{s3_name}",
                                 ],
                                 env=s3_env,
