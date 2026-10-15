@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import os
 import shlex
 import shutil
@@ -12,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from subprocess import Popen
-from typing import TYPE_CHECKING, Dict, List, Optional, TypedDict
+from typing import TYPE_CHECKING, Dict, List, TypedDict
 
 import docker
 import jinja2
@@ -42,6 +43,12 @@ class AppInfo(TypedDict):
     branch: str
 
 
+class PatchBuildAppInfo(TypedDict):
+    app: str
+    url: str
+    hash: str
+
+
 class CloneError(AgentException):
     pass
 
@@ -50,11 +57,11 @@ class ContextValidationError(AgentException):
     def __init__(
         self,
         message: str,
-        app: Optional[str] = None,
-        actual: Optional[str] = None,
-        expected: Optional[str] = None,
-        package: Optional[str] = None,
-        invalid_releases: Optional[List[Dict[str, str]]] = None,
+        app: str | None = None,
+        actual: str | None = None,
+        expected: str | None = None,
+        package: str | None = None,
+        invalid_releases: list[dict[str, str]] | None = None,
     ):
         super().__init__(
             {
@@ -74,8 +81,8 @@ class BuildWarning(Warning):
 
 @dataclass
 class JobContext:
-    job: Optional[Job] = None
-    step: Optional[Step] = None
+    job: Job | None = None
+    step: Step | None = None
 
 
 class JobMixin:
@@ -103,7 +110,7 @@ class ContextManager(Base, JobMixin):
     # We need to keep the job context same everywhere.
     # Therefore pass this from the ImageBuilder
     _job_context: JobContext
-    clone_instructions: List[AppInfo]
+    clone_instructions: list[AppInfo]
     group: str
     build_name: str
     dockerfile: str
@@ -112,11 +119,11 @@ class ContextManager(Base, JobMixin):
         default_factory=lambda: os.path.join(os.getcwd(), "repo", "agent", "build_configs")
     )
     deploy_candidate_params: dict = field(default_factory=dict)
-    ssh_keys: Optional[dict] = None
+    ssh_keys: dict | None = None
 
     def __post_init__(self):
         super().__init__()
-        self.output: Dict[str, List[str]] = {"pre-build": []}
+        self.output: dict[str, list[str]] = {"pre-build": []}
         self.build_directory = os.path.join(get_builds_directory(), self.group, self.build_name)
 
     def _run_git_command(self, command: str, cwd: str) -> str:
@@ -140,7 +147,7 @@ class ContextManager(Base, JobMixin):
 
     def _copy_build_config_files(self):
         """Copy generic build config files to the build context"""
-        for filename in ["common_site_config.json", "supervisord.conf", ".vimrc"]:
+        for filename in ["common_site_config.json", "supervisord.conf", ".vimrc", "get_cached_app.py"]:
             shutil.copy(os.path.join(self.build_config_path, filename), self.build_directory)
 
         shutil.copytree(
@@ -240,7 +247,7 @@ class ContextManager(Base, JobMixin):
 
         return self.output["pre-build"]
 
-    def _parse_additional_packages(self) -> List[str]:
+    def _parse_additional_packages(self) -> list[str]:
         """Parse pyproject to get the additional packages"""
         repo_path_map = {}
         for app_info in self.clone_instructions:
@@ -259,7 +266,7 @@ class ContextManager(Base, JobMixin):
 
         return packages
 
-    def _inject_additional_packages(self, packages: List[str]):
+    def _inject_additional_packages(self, packages: list[str]):
         """This hack simply injects the additional packages discovered post cloning"""
         if not packages:
             return
@@ -321,10 +328,10 @@ class ContextManager(Base, JobMixin):
 @dataclass
 class ValidationManager(Base, JobMixin):
     _job_context: JobContext
-    dependencies: Dict[str, str]
-    clone_instructions: List[AppInfo]
+    dependencies: dict[str, str]
+    clone_instructions: list[AppInfo]
 
-    def get_dependency_version(self, dependency_name: str) -> Optional[str]:
+    def get_dependency_version(self, dependency_name: str) -> str | None:
         for dep, version in self.dependencies.items():
             if dep.replace("_VERSION", "").casefold() == dependency_name.casefold():
                 return version
@@ -332,7 +339,7 @@ class ValidationManager(Base, JobMixin):
         raise Exception(f"Dependency version not found for {dependency_name}")
 
     @step("Run Validations")
-    def validate(self, apps: List[str], build_directory: str):
+    def validate(self, apps: list[str], build_directory: str):
         repo_path_map = {}
         for app in apps:
             repo_path_map[app] = os.path.join(build_directory, "apps", app)
@@ -354,7 +361,10 @@ class ValidationManager(Base, JobMixin):
             actual += ".0"
 
         sv_actual = sv.Version(actual)
-        sv_expected = sv.SimpleSpec(expected)
+        try:
+            sv_expected = sv.SimpleSpec(expected)
+        except ValueError:
+            sv_expected = sv.NpmSpec(expected)
 
         return sv_actual in sv_expected
 
@@ -430,7 +440,7 @@ class ValidationManager(Base, JobMixin):
 
             self._check_frappe_dependencies(app, frappe_deps)
 
-    def _check_frappe_dependencies(self, app: str, frappe_deps: Dict[str, str]):
+    def _check_frappe_dependencies(self, app: str, frappe_deps: dict[str, str]):
         for dep_app, expected in frappe_deps.items():
             actual = self._get_app_version(dep_app)
             if not actual or sv.Version(actual) in sv.SimpleSpec(expected):
@@ -445,7 +455,7 @@ class ValidationManager(Base, JobMixin):
                 expected,
             )
 
-    def _get_app_version(self, app: str) -> Optional[str]:
+    def _get_app_version(self, app: str) -> str | None:
         pm = self.pmf.get(app)
         if not pm:
             return None
@@ -515,13 +525,12 @@ class ImageBuilder(Base, JobMixin):
         registry: dict,
         platform: str,
         build_token: str,
-        dockerfile: str | None = None,
-        clone_instructions: List[AppInfo] | None = None,
-        group: str | None = None,
-        build_name: str | None = None,
-        deploy_candidate_params: dict | None = None,
+        dockerfile: str,
+        clone_instructions: list[AppInfo],
+        group: str,
+        build_name: str,
+        deploy_candidate_params: dict,
         ssh_keys: dict | None = None,
-        filename: str | None = None,
     ) -> None:
         super().__init__()
 
@@ -529,35 +538,28 @@ class ImageBuilder(Base, JobMixin):
         self.image_repository = image_repository
         self.image_tag = image_tag
         self.registry = registry
-        if platform not in ("arm64", "x86_64", "linux/amd64", "linux/arm64"):
+        if platform not in ("arm64", "x86_64"):
             raise ValueError(f"Invalid platform '{platform}'")
         self.platform = platform
 
         self._job_context = JobContext()
-        self.filename = filename
-        self.filepath = os.path.join(get_image_build_context_directory(), filename) if filename else None
-        self.context_manager = None
-        self.validation_manager = None
-        self.build_directory = None
 
-        if not self.filepath:
-            deploy_candidate_params = deploy_candidate_params or {}
-            self.context_manager = ContextManager(
-                clone_instructions=clone_instructions,
-                build_name=build_name,
-                group=group,
-                dockerfile=dockerfile,
-                deploy_candidate_params=deploy_candidate_params,
-                platform=platform,
-                ssh_keys=ssh_keys,
-                _job_context=self._job_context,
-            )
-            self.build_directory = self.context_manager.build_directory
-            self.validation_manager = ValidationManager(
-                _job_context=self._job_context,
-                dependencies=deploy_candidate_params.get("dependencies"),
-                clone_instructions=clone_instructions,
-            )
+        self.context_manager = ContextManager(
+            clone_instructions=clone_instructions,
+            build_name=build_name,
+            group=group,
+            dockerfile=dockerfile,
+            deploy_candidate_params=deploy_candidate_params,
+            platform=platform,
+            ssh_keys=ssh_keys,
+            _job_context=self._job_context,
+        )
+        self.build_directory = self.context_manager.build_directory
+        self.validation_manager = ValidationManager(
+            _job_context=self._job_context,
+            dependencies=deploy_candidate_params.get("dependencies"),
+            clone_instructions=clone_instructions,
+        )
 
         self.no_cache = no_cache
         self.no_push = no_push
@@ -585,21 +587,15 @@ class ImageBuilder(Base, JobMixin):
 
     @job("Run Remote Builder")
     def run_remote_builder(self):
-        if self.filepath:
-            try:
-                return self._build_and_push(self.filepath)
-            finally:
-                self._cleanup_uploaded_context()
-
-        self.context_manager.clone_repositories()
-        self.context_manager.prepare_build_context()
-        self.validation_manager.validate(
-            apps=[app_info["app"] for app_info in self.context_manager.clone_instructions],
-            build_directory=self.build_directory,
-        )
-        context_tar_filepath = self.tar_build_context()
-
+        context_tar_filepath = None
         try:
+            self.context_manager.clone_repositories()
+            self.context_manager.prepare_build_context()
+            self.validation_manager.validate(
+                apps=[app_info["app"] for app_info in self.context_manager.clone_instructions],
+                build_directory=self.build_directory,
+            )
+            context_tar_filepath = self.tar_build_context()
             return self._build_and_push(context_tar_filepath)
         finally:
             self._cleanup_context(context_tar_filepath)
@@ -766,29 +762,165 @@ class ImageBuilder(Base, JobMixin):
             os.remove(self.secret_path)
 
     @step("Cleanup Context")
-    def _cleanup_context(self, context_tar_filepath: str):
+    def _cleanup_context(self, context_tar_filepath: str | None):
         if os.path.exists(self.build_directory):
             shutil.rmtree(self.build_directory, ignore_errors=True)
 
-        if os.path.exists(context_tar_filepath):
+        if context_tar_filepath and os.path.exists(context_tar_filepath):
             os.remove(context_tar_filepath)
 
         return {"cleanup": True}
 
-    @step("Cleanup Context")
-    def _cleanup_uploaded_context(self):
-        if not self.filepath or not os.path.exists(self.filepath):
-            return {"cleanup": False}
 
-        os.remove(self.filepath)
-        return {"cleanup": True}
+class PatchImageBuilder(Base, JobMixin):
+    def __init__(
+        self,
+        base_image: str,
+        image_repository: str,
+        image_tag: str,
+        no_push: bool,
+        registry: dict,
+        patch_build_app_instructions: list[PatchBuildAppInfo],
+        build_name: str,
+    ) -> None:
+        super().__init__()
+        self._job_context = JobContext()
+        self.base_image = base_image
+        self.image_repository = image_repository
+        self.image_tag = image_tag
+        self.no_push = no_push
+        self.registry = registry
+        self.patch_build_app_instructions = patch_build_app_instructions
+        self.container_name = f"patch-build-{build_name}"
+        self.output: Output = {"build": [], "push": []}
+        self.last_published = datetime.now()
 
+    def _get_image_name(self) -> str:
+        return f"{self.image_repository}:{self.image_tag}"
 
-def get_image_build_context_directory():
-    path = os.path.join(os.getcwd(), "build_context")
-    if not os.path.exists(path):
-        os.makedirs(path)
-    return path
+    @job("Run Patch Build")
+    def run_patch_build(self):
+        try:
+            self._start_base_container()
+            self._pull_app_updates()
+            self._commit_patch_image()
+            if not self.no_push:
+                self._push_patch_image()
+        finally:
+            self._cleanup_container()
+        return self.data
+
+    @step("Start Base Container")
+    def _start_base_container(self):
+        """Docker login and pull base image"""
+        self.execute(
+            f"docker login "
+            f"-u {self.registry['username']} "
+            f"-p {self.registry['password']} "
+            f"{self.registry['url']}"
+        )
+        self.execute(f"docker pull {self.base_image}")
+        self.execute(f"docker run -d --name {self.container_name} {self.base_image} tail -f /dev/null")
+
+    @step("Pull App Updates")
+    def _pull_app_updates(self):
+        for patch_build_app_info in self.patch_build_app_instructions:
+            self._pull_app(patch_build_app_info)
+        self._publish_throttled_output(True)
+        return self.output["build"]
+
+    def _pull_app(self, patch_build_app_info: PatchBuildAppInfo):
+        app = patch_build_app_info["app"]
+        url = patch_build_app_info["url"]
+        new_hash = patch_build_app_info["hash"]
+        app_path = f"/home/frappe/frappe-bench/apps/{app}"
+        old_hash = self._docker_exec(f"git -C {app_path} rev-parse HEAD", publish=False).strip()
+        self._docker_exec(f"git -C {app_path} fetch --depth 1 {url} {new_hash}")
+        self._docker_exec(f"git -C {app_path} reset --hard HEAD")
+        self._docker_exec(f"git -C {app_path} clean -fd")
+        self._docker_exec(f"git -C {app_path} checkout {new_hash}")
+
+        if self._has_dependency_changes(app_path, old_hash, new_hash):
+            self._reinstall_app_deps(app)
+
+        if self._has_ui_changes(app_path, old_hash, new_hash):
+            self._bench_build_app(app)
+
+    def _has_ui_changes(self, app_path, old_hash, new_hash) -> bool:
+        """If the two commits have UI changes"""
+        out = self._docker_exec(
+            f"git -C {app_path} diff --name-only {old_hash} {new_hash} -- '*.vue' '*.js' '*.jsx'",
+            publish=False,
+        )
+        return bool(out.strip())
+
+    def _has_dependency_changes(self, app_path, old_hash, new_hash) -> bool:
+        """If the two commits have python dependency changes"""
+        out = self._docker_exec(
+            f"git -C {app_path} diff --name-only {old_hash} {new_hash} -- requirements.txt pyproject.toml",
+            publish=False,
+        )
+        return bool(out.strip())
+
+    def _reinstall_app_deps(self, app):
+        pip = "/home/frappe/frappe-bench/env/bin/python -m pip"
+        self._docker_exec(f"{pip} install -e /home/frappe/frappe-bench/apps/{app}")
+
+    def _bench_build_app(self, app):
+        self._docker_exec(f"cd /home/frappe/frappe-bench && bench build --app {app} --hard-link")
+
+    def _docker_exec(self, command: str, publish: bool = True) -> str:
+        """Execute a command inside the running container and return the output"""
+        result = self.execute(f"docker exec {self.container_name} bash -c {shlex.quote(command)}")
+        output = result.get("output", "") if isinstance(result, dict) else ""
+        if publish:
+            self.output["build"].append(output)
+            self._publish_throttled_output(False)
+        return output
+
+    def _publish_throttled_output(self, flush: bool) -> None:
+        if flush:
+            self.publish_data(self.output)
+            return
+
+        now = datetime.now()
+        if (now - self.last_published).total_seconds() <= 1:
+            return
+
+        self.last_published = now
+        self.publish_data(self.output)
+
+    @step("Commit Image")
+    def _commit_patch_image(self):
+        self.execute(
+            f"docker commit --change='CMD [\"supervisord\"]' {self.container_name} {self._get_image_name()}"
+        )
+
+    @step("Push Docker Image")
+    def _push_patch_image(self):
+        environment = os.environ.copy()
+        client = docker.from_env(environment=environment, timeout=5 * 60)
+        auth_config = {
+            "username": self.registry["username"],
+            "password": self.registry["password"],
+            "serveraddress": self.registry["url"],
+        }
+        for line in client.images.push(
+            self.image_repository,
+            self.image_tag,
+            stream=True,
+            decode=True,
+            auth_config=auth_config,
+        ):
+            self.output["push"].append(line)
+            self._publish_throttled_output(False)
+
+        self._publish_throttled_output(True)
+        return self.output["push"]
+
+    def _cleanup_container(self):
+        with contextlib.suppress(Exception):
+            self.execute(f"docker rm -f {self.container_name}")
 
 
 def get_clone_directory():
