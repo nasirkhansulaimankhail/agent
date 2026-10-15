@@ -19,6 +19,7 @@ import jinja2
 import semantic_version as sv
 
 from agent.base import Base
+from agent.build_utils.registry import raise_for_push_error
 from agent.build_utils.validations import check_python_syntax, get_package_manager_files
 from agent.exceptions import AgentException, RegistryDownException
 from agent.job import Job, Step, job, step
@@ -719,6 +720,9 @@ class ImageBuilder(Base, JobMixin):
         ):
             self.output["push"].append(line)
             self._publish_throttled_output(False)
+            raise_for_push_error(line)
+
+        self._publish_throttled_output(True)
 
     def _publish_throttled_output(self, flush: bool):
         if flush:
