@@ -19,7 +19,8 @@ from rq.job import JobStatus
 
 from agent.backup_log import InvalidRange, parse_range
 from agent.base import AgentException
-from agent.builder import ImageBuilder, get_image_build_context_directory
+from agent.builder import ImageBuilder
+from agent.legacy_uploaded_builder import get_image_build_context_directory
 from agent.database import JSONEncoderForSQLQueryResult
 from agent.database_physical_backup import DatabasePhysicalBackup
 from agent.database_physical_restore import DatabasePhysicalRestore
