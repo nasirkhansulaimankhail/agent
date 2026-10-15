@@ -12,6 +12,7 @@ from contextlib import suppress
 from datetime import datetime, timedelta
 from functools import partial
 from glob import glob
+from ipaddress import IPv6Address, ip_address
 from pathlib import Path, PurePath
 from random import choices
 from textwrap import indent
@@ -173,7 +174,14 @@ class Bench(Base):
             non_zero_throw=non_zero_throw,
         )
 
-    def docker_execute(self, command, input=None, subdir=None, non_zero_throw=True, as_root: bool = False):
+    def docker_execute(
+        self,
+        command,
+        input=None,
+        subdir=None,
+        non_zero_throw=True,
+        as_root: bool = False,
+    ):
         interactive = "-i" if input else ""
         as_root = "-u root" if as_root else ""
         workdir = "/home/frappe/frappe-bench"
@@ -404,6 +412,7 @@ class Bench(Base):
         public,
         private,
         skip_failing_patches,
+        skip_migrate=False,
     ):
         files = self.download_files(name, database, public, private)
         self.bench_new_site(name, mariadb_root_password, admin_password)
@@ -423,7 +432,8 @@ class Bench(Base):
         finally:
             self.delete_downloaded_files(files["directory"])
         site.uninstall_unavailable_apps(apps)
-        site.migrate(skip_failing_patches=skip_failing_patches)
+        if not skip_migrate:
+            site.migrate(skip_failing_patches=skip_failing_patches)
         site.set_admin_password(admin_password)
         site.enable_scheduler()
         self.setup_nginx()
@@ -467,19 +477,48 @@ class Bench(Base):
         shutil.rmtree(backup_files_directory)
 
     @job("Archive Site")
-    def archive_site(self, name, mariadb_root_password, force):
+    def archive_site(
+        self,
+        name,
+        mariadb_root_password,
+        force,
+        offsite=None,
+    ):
         site_directory = os.path.join(self.sites_directory, name)
+        backups = None
+
         if os.path.exists(site_directory):
-            self.bench_archive_site(name, mariadb_root_password, force)
-        self.setup_nginx()
-        self.server._reload_nginx()
+            if offsite:
+                site = Site(name, self)
+                backup_files = site.backup(with_files=True)
+                uploaded_files = (
+                    site.upload_offsite_backup(
+                        backup_files,
+                        offsite,
+                        keep_files_locally_after_offsite_backup=False,
+                    )
+                    if (backup_files)
+                    else {}
+                )
+                backups = {"backups": backup_files, "offsite": uploaded_files}
+
+            self.bench_archive_site(
+                name,
+                mariadb_root_password,
+                force,
+            )
+
+            self.setup_nginx()
+            self.server._reload_nginx()
+
+        return backups
 
     @step("Bench Setup NGINX")
-    def setup_nginx(self):
+    def setup_nginx(self, ignore_missing_site_configs=False):
         from filelock import FileLock
 
         with FileLock(os.path.join(self.directory, "nginx.config.lock")):
-            self.generate_nginx_config()
+            self.generate_nginx_config(ignore_missing_site_configs=ignore_missing_site_configs)
         return self.server._reload_nginx()
 
     @step("Bench Setup NGINX Target")
@@ -496,9 +535,22 @@ class Bench(Base):
                 if site.name.endswith("." + wildcard_domain):
                     site.host = "*." + wildcard_domain
 
-    def generate_nginx_config(self):
-        sites = [s for s in self.valid_sites.values()]
-        domains = _get_domains(sites)
+    def generate_nginx_config(self, ignore_missing_site_configs=False):
+        sites = list(self.valid_sites.values())
+        while True:
+            try:
+                domains = _get_domains(sites)
+                cors_origins = _get_cors_origins(sites, self.common_site_config.get("allow_cors"))
+            except FileNotFoundError as error:
+                missing_site = next((site for site in sites if site.config_file == error.filename), None)
+                if not ignore_missing_site_configs or not missing_site:
+                    raise
+
+                # Parallel site updates can move a site after this source bench's site list is read.
+                # Ignore that stale entry only site update jobs
+                sites.remove(missing_site)
+                continue
+            break
 
         if standalone := self.server.config.get("standalone"):
             self._set_sites_host(sites)
@@ -519,7 +571,9 @@ class Bench(Base):
             "error_pages_directory": self.server.error_pages_directory,
             "nginx_directory": self.server.nginx_directory,
             "tls_protocols": self.server.config.get("tls_protocols"),
+            "dhparam_file": self.server.dhparam_file,
             "code_server": codeserver,
+            "cors_origins": cors_origins,
         }
         nginx_config = os.path.join(self.directory, "nginx.conf")
 
@@ -682,6 +736,7 @@ class Bench(Base):
                 "is_code_server_enabled": self.bench_config.get("is_code_server_enabled", False),
                 "custom_workers": self.common_site_config.get("workers", {}),
                 "custom_workers_group": self._get_custom_workers_group(),
+                "is_flow_server_enabled": self.common_site_config.get("flow_server_manager") == "supervisor",
                 "host_server": self.server.config["name"],
             },
             supervisor_config,
@@ -831,8 +886,8 @@ class Bench(Base):
 
     def stop(self):
         if self.bench_config.get("single_container"):
-            self.execute(f"docker stop {self.name}")
-            return self.execute(f"docker rm {self.name}")
+            return self.execute(f"docker rm {self.name} --force")
+
         return self.execute(f"docker stack rm {self.name}")
 
     @step("Stop Bench")
@@ -849,10 +904,10 @@ class Bench(Base):
         self._update_runtime_limits(memory_high, memory_max, memory_swap, vcpu)
         self._start()
 
-    def update_runtime_limits(self):
-        memory_high = self.bench_config.get("memory_high")
-        memory_max = self.bench_config.get("memory_max")
-        memory_swap = self.bench_config.get("memory_swap")
+    def update_runtime_limits(self, multiplier=1.0):
+        memory_high = (self.bench_config.get("memory_high") or 0) * multiplier
+        memory_max = (self.bench_config.get("memory_max") or 0) * multiplier
+        memory_swap = (self.bench_config.get("memory_swap") or 0) * multiplier
         vcpu = self.bench_config.get("vcpu")
         if not any([memory_high, memory_max, memory_swap, vcpu]):
             return
@@ -869,7 +924,12 @@ class Bench(Base):
             cmd += f" --memory-swap={memory_swap}M"
         if vcpu:
             cmd += f" --cpus={vcpu}"
-        return self.execute(cmd)
+        try:
+            return self.execute(cmd)
+        except Exception:
+            print(f"Failed to update runtime limits for {self.name}: {cmd}")
+            traceback.print_exc()
+            return None
 
     def _update_database_host(self, db_host: str):
         self._update_config({"db_host": db_host})
@@ -1385,6 +1445,210 @@ def _get_domains(sites: list[Site]):
         for domain in site.config.get("domains", []):
             domains[domain] = site.name
     return domains
+
+
+_HOSTNAME_PATTERN = re.compile(
+    r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+    r"(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*"
+)
+_UNSAFE_NGINX_VALUE_PATTERN = re.compile(r"[\s\x00-\x1f\x7f\"';{}\\]")
+
+
+def _json_decoded_cors_origin(origin: str) -> object:
+    with suppress(json.JSONDecodeError):
+        return json.loads(origin)
+
+    return None
+
+
+def _strip_wrapping_quotes(value: str) -> str:
+    for _ in range(3):
+        if len(value) < 2 or value[0] != value[-1] or value[0] not in ("'", '"'):
+            break
+        value = value[1:-1].strip()
+
+    return value
+
+
+def _cors_origin_string_values(origin: str) -> list[str]:
+    origin = origin.strip()
+    if not origin:
+        return []
+
+    decoded = _json_decoded_cors_origin(origin)
+    if isinstance(decoded, str) and decoded != origin:
+        return _cors_origin_values(decoded)
+    if isinstance(decoded, list):
+        return _cors_origin_values(decoded)
+
+    origin = _strip_wrapping_quotes(origin)
+    if "," in origin:
+        return _cors_origin_values(origin.split(","))
+
+    return [origin]
+
+
+def _cors_origin_values(origins: object) -> list[str]:
+    if origins is None:
+        return []
+
+    if isinstance(origins, str):
+        origins = [origins]
+
+    if not isinstance(origins, (list, tuple, set)):
+        return []
+
+    values = []
+    for origin in origins:
+        if isinstance(origin, str):
+            values.extend(_cors_origin_string_values(origin))
+
+    return values
+
+
+def _normalize_hostname(hostname: object) -> str | None:
+    if not isinstance(hostname, str):
+        return None
+
+    hostname = hostname.strip().strip('"').strip("'").strip().rstrip(".").lower()
+    if not hostname or _UNSAFE_NGINX_VALUE_PATTERN.search(hostname):
+        return None
+
+    if hostname.startswith("[") and hostname.endswith("]"):
+        hostname = hostname[1:-1]
+
+    with suppress(ValueError):
+        return str(ip_address(hostname))
+
+    if ":" in hostname:
+        return None
+
+    with suppress(UnicodeError):
+        hostname = hostname.encode("idna").decode("ascii")
+        if len(hostname) <= 253 and _HOSTNAME_PATTERN.fullmatch(hostname):
+            return hostname
+
+    return None
+
+
+def _format_cors_origin_host(hostname: str) -> str:
+    with suppress(ValueError):
+        if isinstance(ip_address(hostname), IPv6Address):
+            return f"[{hostname}]"
+
+    return hostname
+
+
+def _cors_domain_values(domains: object) -> list[object]:
+    if domains is None:
+        return []
+    if isinstance(domains, str):
+        return [domains]
+    if isinstance(domains, (list, tuple, set)):
+        return list(domains)
+    return []
+
+
+def _safe_urlparse(origin: str):
+    try:
+        return urlparse(origin)
+    except ValueError:
+        return None
+
+
+def _safe_parsed_hostname(parsed) -> str | None:
+    try:
+        return parsed.hostname
+    except ValueError:
+        return None
+
+
+def _safe_parsed_port(parsed) -> tuple[bool, int | None]:
+    try:
+        return True, parsed.port
+    except ValueError:
+        return False, None
+
+
+def _normalize_url_cors_origin(origin: str) -> str | None:
+    parsed = _safe_urlparse(origin)
+    if not parsed or parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return None
+    if parsed.username or parsed.password:
+        return None
+
+    hostname = _normalize_hostname(_safe_parsed_hostname(parsed))
+    port_is_valid, port = _safe_parsed_port(parsed)
+    if not hostname or not port_is_valid:
+        return None
+
+    netloc = _format_cors_origin_host(hostname)
+    if port is not None:
+        netloc = f"{netloc}:{port}"
+
+    return f"{parsed.scheme}://{netloc}"
+
+
+def _normalize_cors_origin(origin: str) -> str | None:
+    if not origin or _UNSAFE_NGINX_VALUE_PATTERN.search(origin):
+        return None
+    if origin == "*":
+        return origin
+
+    return _normalize_url_cors_origin(origin)
+
+
+def _normalize_cors_origins(origins: str | list[str] | None) -> list[str]:
+    normalized = []
+    seen = set()
+
+    for origin in _cors_origin_values(origins):
+        normalized_origin = _normalize_cors_origin(origin)
+        if not normalized_origin:
+            continue
+        if normalized_origin not in seen:
+            normalized.append(normalized_origin)
+            seen.add(normalized_origin)
+
+    return normalized
+
+
+def _get_cors_origins(
+    sites: list[Site],
+    bench_cors: str | list[str] | None = None,
+) -> list[tuple[str, str]]:
+    """Return nginx map entries for site-aware CORS responses.
+
+    Exact origins are matched against ``$host:$http_origin`` and echoed back
+    as ``$http_origin``. Wildcards are matched per-host and return ``"*"``.
+
+    Site-level ``allow_cors`` overrides bench-level (``common_site_config``).
+    A site explicitly setting ``allow_cors`` to ``[]`` disables CORS even if
+    the bench default is set.
+    """
+    pairs: set[tuple[str, str]] = set()
+    default_origins = _normalize_cors_origins(bench_cors)
+
+    for site in sites:
+        site_cors = site.config.get("allow_cors")
+        origins = _normalize_cors_origins(site_cors) if site_cors is not None else default_origins
+        if not origins:
+            continue
+
+        configured_hostnames = [
+            site.name,
+            *_cors_domain_values(site.config.get("domains", [])),
+        ]
+        hostnames = [hostname for hostname in map(_normalize_hostname, configured_hostnames) if hostname]
+        for hostname in hostnames:
+            cors_hostname = _format_cors_origin_host(hostname)
+            for origin in origins:
+                if origin == "*":
+                    pairs.add((rf"~^{re.escape(cors_hostname)}:.*$", '"*"'))
+                else:
+                    pairs.add((f'"{cors_hostname}:{origin}"', "$http_origin"))
+
+    return sorted(pairs)
 
 
 def _get_codeserver_config(bench_directory: str):

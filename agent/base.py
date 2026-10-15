@@ -36,7 +36,7 @@ class Base:
         self.data: dict[str, str] = {}
 
         # internal
-        self._config_file_lock: filelock.SoftFileLock | None = None
+        self._config_file_lock: filelock.FileLock | None = None
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.name})"
@@ -91,13 +91,30 @@ class Base:
 
     def run_subprocess(self, command, directory, input, executable, non_zero_throw=True):
         # Start a child process and start reading output immediately
+        if isinstance(command, str):
+            import warnings
+
+            warnings.warn(
+                "String commands are deprecated; use list form for safety",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            use_shell = True
+        else:
+            use_shell = False
+            if executable is not None:
+                raise TypeError(
+                    "executable is not supported with list-form commands; "
+                    "include the binary as the first element of the list"
+                )
+
         with subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             stdin=subprocess.PIPE if input else None,
             cwd=directory,
-            shell=True,
+            shell=use_shell,
             executable=executable,
         ) as process:
             if input:
@@ -206,7 +223,7 @@ class Base:
         """
         if for_update:
             if not self._config_file_lock:
-                self._config_file_lock = filelock.SoftFileLock(self.config_file + ".lock")
+                self._config_file_lock = filelock.FileLock(self.config_file + ".lock")
             self._config_file_lock.acquire()
 
         with open(self.config_file, "r") as f:

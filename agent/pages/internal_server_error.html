@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Internal Server Error</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        color-scheme: light;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          Cantarell, "Helvetica Neue", sans-serif;
+        background-color: #ffffff;
+        color: #171717;
+        min-height: 100vh;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 48px;
+      }
+
+      .content {
+        max-width: 26rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .text {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      h1 {
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 1.3;
+      }
+
+      p {
+        font-size: 14px;
+        line-height: 1.5;
+        color: #525252;
+      }
+
+      .footer {
+        font-size: 14px;
+        line-height: 1.5;
+        text-align: center;
+        color: #7c7c7c;
+      }
+
+      a {
+        color: #0070cc;
+      }
+
+      /* plain-html visited purple. must not reach .button, whose label is white */
+      a:not(.button):visited {
+        color: #551a8b;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background-color: #171717;
+        color: #ffffff;
+        font-size: 14px;
+        text-decoration: none;
+      }
+
+      .button:hover {
+        background-color: #2f2f2f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <svg
+        width="40"
+        height="40"
+        viewBox="0 0 40 40"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <path
+          d="M17.4 5.5a3 3 0 0 1 5.2 0l14.1 24.5a3 3 0 0 1-2.6 4.5H5.9a3 3 0 0 1-2.6-4.5L17.4 5.5Z"
+          stroke="#E5484D"
+          stroke-width="2.5"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M20 15.5v6.5"
+          stroke="#E5484D"
+          stroke-width="2.5"
+          stroke-linecap="round"
+        />
+        <circle cx="20" cy="27.5" r="1.75" fill="#E5484D" />
+      </svg>
+      <div class="text">
+        <h1>The application returned an error</h1>
+        <p>Error: 500 Internal Server Error</p>
+      </div>
+      <!-- nginx serves this page inside an iframe. A link with no target loads
+           into that frame, and both destinations send X-Frame-Options:
+           SAMEORIGIN, so the browser refuses to render them. _blank opens a new
+           top-level tab, which is never framed, and leaves this page up. -->
+      <a
+        class="button"
+        target="_blank"
+        href="https://docs.frappe.io/cloud/site/common-issues/500-internal-server-error"
+        >View troubleshooting guide</a
+      >
+    </div>
+    <p class="footer">
+      Site owner? Review the
+      <a
+        target="_blank"
+        href="https://frappecloud.com/dashboard/benches/__BENCH_NAME__/logs/web.error.log"
+        >error logs</a
+      >
+      to identify the cause.
+    </p>
+  </body>
+</html>

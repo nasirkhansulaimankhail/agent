@@ -3,6 +3,9 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+import secrets
+import shutil
+import struct
 import subprocess
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -56,7 +59,15 @@ def to_bytes(size_str: str) -> float:
 
 def download_file(url, prefix):
     """Download file locally under path prefix and return local path"""
-    filename = urlparse(url).path.split("/")[-1]
+    basename = os.path.basename(urlparse(url).path)
+    ext = ""
+    for known in (".sql.gz", ".tar.gz", ".tgz", ".sql", ".gz", ".tar"):
+        if basename.endswith(known):
+            ext = known
+            break
+    if ext and not all(c.isalnum() or c in "._-" for c in ext):
+        ext = ""
+    filename = secrets.token_urlsafe(16) + ext
     local_filename = os.path.join(prefix, filename)
 
     with requests.get(url, stream=True) as r:
@@ -250,3 +261,93 @@ def get_supervisor_processes_status() -> dict[str, str | dict[str, str]]:
         return dict(nested_status)
     except Exception:
         return {}
+
+
+def parse_fts_index_prefixlen_from_cfg(file_path: str) -> dict[str, int]:  # noqa: C901
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read()
+    except OSError as e:
+        raise RuntimeError(f"Failed to read FTS index config file '{file_path}': {e}") from e
+
+    current_pos = 0
+
+    def _u32():
+        nonlocal current_pos
+        v = struct.unpack_from(">I", data, current_pos)[0]
+        current_pos += 4
+        return v
+
+    def _skip(n):
+        nonlocal current_pos
+        current_pos += n
+
+    def _read_string():
+        length = _u32()  # length includes NUL byte
+        nonlocal current_pos
+        s = data[current_pos : current_pos + length].rstrip(b"\x00").decode()
+        current_pos += length
+        return s
+
+    _skip(4)  # cfg version (IB_EXPORT_CFG_VERSION_V1 = 1)
+    _read_string()  # hostname where tablespace was exported
+    _read_string()  # table name
+    _skip(8)  # autoinc value (u64)
+    _skip(4)  # logical page size
+    _skip(4)  # table flags
+
+    # skip column definitions: row_import_read_columns()
+    # each column is 7 x u32 (prtype, mtype, len, mbminmaxlen, ind, ord_part, max_prefix) + name (string)
+    n_cols = _u32()
+    for _ in range(n_cols):
+        _skip(7 * 4)
+        _read_string()  # column name
+
+    # read index definitions: row_import_read_index_data()
+    no_of_indexes = _u32()
+    result = {}
+
+    for _ in range(no_of_indexes):
+        _skip(8)  # index id (u64), mach_read_from_8()
+        _skip(4)  # space
+        _skip(4)  # page_no
+        index_type = _u32()  # type  (32 = FTS, 3 = clustered, etc.)
+        _skip(4)  # trx_id_offset
+        _skip(4)  # n_user_defined_cols
+        _skip(4)  # n_uniq
+        _skip(4)  # n_nullable
+        n_fields = _u32()  # n_fields
+        index_name = _read_string()
+
+        # read fields: row_import_cfg_read_index_fields()
+        # each field: prefix_len (u32), fixed_len (u32), name string
+        max_prefix_len = 0
+        for _ in range(n_fields):
+            # lower 12 bits are the actual prefix_len (field->prefix_len & ((1U<<12)-1))
+            prefix_len = _u32() & ((1 << 12) - 1)
+            _skip(4)  # fixed_len: bit31=descending flag, lower 10 bits=fixed_len
+            _read_string()  # field name
+            if prefix_len > max_prefix_len:
+                max_prefix_len = prefix_len
+
+        # For FTS indexes, store the max prefix_len across all fields
+        if index_type == 32:
+            result[index_name] = max_prefix_len
+
+    return result
+
+
+def db_client_cli():
+    if shutil.which("mariadb") is not None:
+        return "mariadb"
+    if shutil.which("mysql") is not None:
+        return "mysql"
+    raise RuntimeError("Neither 'mariadb' nor 'mysql' client is installed on the system.")
+
+
+def db_dump_cli():
+    if shutil.which("mariadb-dump") is not None:
+        return "mariadb-dump"
+    if shutil.which("mysqldump") is not None:
+        return "mysqldump"
+    raise RuntimeError("Neither 'mariadb-dump' nor 'mysqldump' client is installed on the system.")
