@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import os
 import shlex
 import shutil
@@ -7,7 +8,6 @@ import subprocess
 import tarfile
 import tempfile
 import time
-import contextlib
 import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -148,7 +148,7 @@ class ContextManager(Base, JobMixin):
 
     def _copy_build_config_files(self):
         """Copy generic build config files to the build context"""
-        for filename in ["common_site_config.json", "supervisord.conf", ".vimrc"]:
+        for filename in ["common_site_config.json", "supervisord.conf", ".vimrc", "get_cached_app.py"]:
             shutil.copy(os.path.join(self.build_config_path, filename), self.build_directory)
 
         shutil.copytree(
@@ -373,7 +373,10 @@ class ValidationManager(Base, JobMixin):
             actual += ".0"
 
         sv_actual = sv.Version(actual)
-        sv_expected = sv.SimpleSpec(expected)
+        try:
+            sv_expected = sv.SimpleSpec(expected)
+        except ValueError:
+            sv_expected = sv.NpmSpec(expected)
 
         return sv_actual in sv_expected
 
@@ -596,15 +599,15 @@ class ImageBuilder(Base, JobMixin):
 
     @job("Run Remote Builder")
     def run_remote_builder(self):
-        self.context_manager.clone_repositories()
-        self.context_manager.prepare_build_context()
-        self.validation_manager.validate(
-            apps=[app_info["app"] for app_info in self.context_manager.clone_instructions],
-            build_directory=self.build_directory,
-        )
-        context_tar_filepath = self.tar_build_context()
-
+        context_tar_filepath = None
         try:
+            self.context_manager.clone_repositories()
+            self.context_manager.prepare_build_context()
+            self.validation_manager.validate(
+                apps=[app_info["app"] for app_info in self.context_manager.clone_instructions],
+                build_directory=self.build_directory,
+            )
+            context_tar_filepath = self.tar_build_context()
             return self._build_and_push(context_tar_filepath)
         finally:
             self._cleanup_context(context_tar_filepath)
@@ -771,11 +774,11 @@ class ImageBuilder(Base, JobMixin):
             os.remove(self.secret_path)
 
     @step("Cleanup Context")
-    def _cleanup_context(self, context_tar_filepath: str):
+    def _cleanup_context(self, context_tar_filepath: str | None):
         if os.path.exists(self.build_directory):
             shutil.rmtree(self.build_directory, ignore_errors=True)
 
-        if os.path.exists(context_tar_filepath):
+        if context_tar_filepath and os.path.exists(context_tar_filepath):
             os.remove(context_tar_filepath)
 
         return {"cleanup": True}
@@ -930,6 +933,8 @@ class PatchImageBuilder(Base, JobMixin):
     def _cleanup_container(self):
         with contextlib.suppress(Exception):
             self.execute(f"docker rm -f {self.container_name}")
+
+
 def get_clone_directory():
     path = os.path.join(os.getcwd(), ".clones")
     if not os.path.exists(path):
