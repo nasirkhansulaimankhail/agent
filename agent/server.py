@@ -925,7 +925,11 @@ class Server(Base):
             self.execute(f"git remote set-url upstream {shlex.quote(url)}", directory=directory)
         self.execute("git fetch upstream", directory=directory)
         self.execute(f"git checkout {shlex.quote(branch)}", directory=directory)
-        self.execute(f"git merge --ff-only upstream/{shlex.quote(branch)}", directory=directory)
+        commit_ref = len(branch) == 40 and all(
+            character in "0123456789abcdefABCDEF" for character in branch
+        )
+        if not commit_ref:
+            self.execute(f"git merge --ff-only upstream/{shlex.quote(branch)}", directory=directory)
         self.execute("./env/bin/pip install -e repo", directory=self.directory)
 
         self._generate_redis_config()
