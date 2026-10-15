@@ -776,7 +776,7 @@ class Bench(Base):
 
     @step("Ensure Code Server Runtime")
     def ensure_code_server_runtime(self):
-        result = self.docker_execute("command -v code-server", non_zero_throw=False)
+        result = self.docker_execute("sh -c 'command -v code-server'", non_zero_throw=False)
         if result.get("returncode") == 0 and result.get("output", "").strip():
             return result
 
