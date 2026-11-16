@@ -26,6 +26,7 @@ if __name__ == "__main__":
     # systemd's docker-exec client cannot signal the in-container Gunicorn itself.
     import os
     import signal
+    import time
     from pathlib import Path
     pid_file = Path("/home/frappe/frappe-bench/config/assets.pid")
     if pid_file.exists():
@@ -33,3 +34,12 @@ if __name__ == "__main__":
         command = Path(f"/proc/{pid}/cmdline")
         if command.exists() and b"asset_gateway:application" in command.read_bytes():
             os.kill(pid, signal.SIGTERM)
+            for _ in range(100):
+                if not command.exists() or not command.read_bytes():
+                    break
+                time.sleep(0.1)
+            else:
+                raise RuntimeError("Asset gateway did not stop within 10 seconds")
+        # Docker recreation can leave a PID file from a different PID namespace.
+        if pid_file.exists() and pid_file.read_text().strip() == str(pid):
+            pid_file.unlink()

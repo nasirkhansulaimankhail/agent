@@ -6,6 +6,7 @@ StartLimitIntervalSec=0
 
 [Service]
 Type=simple
+ExecStartPre=/usr/bin/docker exec %i /home/frappe/frappe-bench/env/bin/python /home/frappe/frappe-bench/config/asset_gateway.py
 ExecStart=/usr/bin/docker exec --workdir /home/frappe/frappe-bench/sites %i /home/frappe/frappe-bench/env/bin/gunicorn --pythonpath /home/frappe/frappe-bench/config --bind unix:/home/frappe/frappe-bench/config/assets.sock --pid /home/frappe/frappe-bench/config/assets.pid --umask 0 --workers 1 --worker-class gthread --threads 4 --timeout 60 --access-logfile - --error-logfile - asset_gateway:application
 ExecStop=/usr/bin/docker exec %i /home/frappe/frappe-bench/env/bin/python /home/frappe/frappe-bench/config/asset_gateway.py
 Restart=always
