@@ -93,7 +93,11 @@ server {
 
 	root {{ sites_directory }};
 
+	# Optional bench-local gateway resolves assets created inside a development container.
+	include {{ sites_directory }}/../config/asset-gateway-server*.conf;
+
 	location /assets {
+		include {{ sites_directory }}/../config/asset-gateway-location*.conf;
 		try_files $uri =404;
 		add_header Cache-Control "max-age=31536000, immutable";
 		{% if cors_origins %}
@@ -265,7 +269,11 @@ server {
 	add_header X-Content-Type-Options nosniff;
 	add_header X-XSS-Protection "1; mode=block";
 
+	# Optional bench-local gateway resolves assets created inside a development container.
+	include {{ sites_directory }}/../config/asset-gateway-server*.conf;
+
 	location /assets {
+		include {{ sites_directory }}/../config/asset-gateway-location*.conf;
 		try_files $uri =404;
 		add_header Cache-Control "max-age=31536000, immutable";
 		{% if cors_origins %}
